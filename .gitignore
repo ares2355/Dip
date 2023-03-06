@@ -1,6 +1,5 @@
 .idea
 .env
-.dockerignore
 main.py
 test.py
 **/*.xlsx
