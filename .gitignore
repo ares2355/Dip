@@ -3,7 +3,7 @@
 .dockerignore
 main.py
 test.py
-.xlsx
+**/*.xlsx
 asa.txt
 333306132.xlsx
 data

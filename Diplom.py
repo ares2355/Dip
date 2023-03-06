@@ -56,7 +56,6 @@ def select(message: tg.Message):
         bot.send_message(message.chat.id, '<b>Слудуйте конпкам!</b>', reply_markup=keyboard,
                          parse_mode='HTML')
         bot.register_next_step_handler(message, select)
-    # TODO: else сделать обработчик! +
 
 
 def get_number_car(message: tg.Message):
@@ -122,7 +121,6 @@ def get_fuel(message):
                          parse_mode='HTML')
         coll.insert_one(data_user)
         bot.register_next_step_handler(message, select)
-        # coll.insert_one(data_user)
     else:
         bot.send_message(message.chat.id, '<em>Вы некоректно ввели данные! Попробуем еще раз</em>',
                          parse_mode='HTML')
@@ -145,27 +143,16 @@ def get_end_shift(message: tg.Message):
         bot.register_next_step_handler(message, get_end_shift)
 
 
-def data_processing(message, last_day, now_day):
-    # TODO: переминовать day что было различие пример: last_day +
+def data_processing(message, last_day, now_day, period_text):
     header = ['Вермя', 'Пользователь', 'Номер машины', 'Пробег', 'Организация', 'Зарплата', 'Топливо',
               'Конечный пробег']
     lists_statistic = []
-    data_bd = list(coll.find_one())
-    ws1 = wb.create_sheet(f'{message.from_user.id}', 0)
-    # ws.title = f'{message.chat.id}'
+    ws1 = wb.create_sheet(f'{period_text}', 0)
     ws1.append(header)
-    # TODO: Преобразовать цикл пример 134-136 строчка кода! [find_one()]  +
-    # for key in coll.find():
-    #     list_key = list(key.keys())
-    #     ws.title = f'{message.chat.id}'
-    #     ws.append(list_key[1:])
-    #     break
     for post in coll.find({"$and": [{"time": {"$gt": last_day, "$lte": now_day}},
-                                    {"user": {"$eq": 333306132}}]}):  # TODO: добавить запрос фильтрацию по chat.id +
+                                    {"user": {"$eq": message.chat.id}}]}):
         lists_statistic.append(post)
     for elm in lists_statistic:
-        # for key, value in elm.items():
-        #     if value == message.chat.id:
         lists_value = list(elm.values())
         alphabet = list(string.ascii_lowercase)
         for i in alphabet:
@@ -178,31 +165,19 @@ def data_processing(message, last_day, now_day):
 def get_static(message: tg.Message):
     now_day = datetime.now()
     if message.text == 'За неделю':
-        week_day = now_day - timedelta(days=7)
-        data_processing(message, week_day, now_day)
-        # for key in coll.find():
-        #     list_key = list(key.keys())
-        #     ws.title = f'{message.chat.id}'
-        #     ws.append(list_key[1:])
-        #     break
-        # for post in coll.find({"time": {"$gte": week_day, "$lte": now_day}}):
-        #     lists_statistic.append(post)
-        # for elm in lists_statistic:
-        #     for key, value in elm.items():
-        #         if value == message.chat.id:
-        #             lists_value = list(elm.values())
-        #             ws.append(lists_value[1:])
-        #             wb.save(f'{message.from_user.username}.xlsx')
-        #             wb.close()
-        bot.send_document(message.chat.id, open(f'{message.from_user.id}.xlsx', 'rb'),
-                          caption='Ваша статистика за неделю!', reply_markup=keyboard)
-        bot.register_next_step_handler(message, select)
+        period_time = now_day - timedelta(days=7)
     elif message.text == 'За месяц':
-        mount_day = now_day - timedelta(days=30)
-        data_processing(message, mount_day, now_day)
-        bot.send_document(message.chat.id, open(f'{message.from_user.id}.xlsx', 'rb'),
-                          caption='Ваша статистика за месяц!', reply_markup=keyboard)
-        bot.register_next_step_handler(message, select)
+        period_time = now_day - timedelta(days=30)
+    else:
+        bot.send_message(message.chat.id, 'Неверно ввел команду! Потвори!', reply_markup=keyboard_2)
+        bot.register_next_step_handler(message, get_static)
+        return
+    data_processing(message, period_time, now_day, message.text)
+    bot.send_document(message.chat.id, open(f'{message.from_user.id}.xlsx', 'rb'),
+                      caption=f'Ваша статистика {message.text}!', reply_markup=keyboard)
+    bot.register_next_step_handler(message, select)
+    # TODO Присылать отчет каждую неделю!
+    # TODO добавить xlxs  в отдельную папку или использовать временные файлы в  python!
 
 
 if __name__ == '__main__':
