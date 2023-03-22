@@ -1,22 +1,27 @@
+import logging
 import os
+import string
 from datetime import datetime, timedelta
+from threading import Thread
 
 import pymongo
+import schedule as schedule
 import telebot
 import telebot.types as tg
 from dotenv import load_dotenv
 from openpyxl import Workbook
 from pymongo.collection import Collection
-import string
-import os
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+)
 
 BOT_API = os.getenv('BOT_API')
 MONGO_URL = os.getenv('MONGO_URL')
 
 bot = telebot.TeleBot(BOT_API)
-data_users = {}
 
 
 def get_user_data(user_id):
@@ -37,6 +42,7 @@ def start_message(message):
 <code>\t-Зарпалата за смену</code>
 <code>\t-Заправленное топливо за смену в Литрах! Пример как указать: 40 или же 0 если нет заправки за смену</code>
 ''')
+    logging.info(f'/start chat_id:{message.chat.id}, user id:{message.from_user.id}')
     bot.send_message(message.chat.id, '<b>Выбери:</b>', reply_markup=keyboard, parse_mode='HTML')
     bot.register_next_step_handler(message, select)
 
@@ -143,14 +149,15 @@ def get_end_shift(message: tg.Message):
         bot.register_next_step_handler(message, get_end_shift)
 
 
-def data_processing(message, last_day, now_day, period_text):
+def process_data(chat_id, file_name, last_day, period_text):
     header = ['Вермя', 'Пользователь', 'Номер машины', 'Пробег', 'Организация', 'Зарплата', 'Топливо',
               'Конечный пробег']
     lists_statistic = []
+    now_day = datetime.now()
     ws1 = wb.create_sheet(f'{period_text}', 0)
     ws1.append(header)
     for post in coll.find({"$and": [{"time": {"$gt": last_day, "$lte": now_day}},
-                                    {"user": {"$eq": message.chat.id}}]}):
+                                    {"user": {"$eq": chat_id}}]}):
         lists_statistic.append(post)
     for elm in lists_statistic:
         lists_value = list(elm.values())
@@ -158,7 +165,7 @@ def data_processing(message, last_day, now_day, period_text):
         for i in alphabet:
             ws1.column_dimensions[i.upper()].width = 18
         ws1.append(lists_value[1:])
-        wb.save(f'{message.from_user.id}.xlsx')
+        wb.save(file_name)
         wb.close()
 
 
@@ -172,12 +179,47 @@ def get_static(message: tg.Message):
         bot.send_message(message.chat.id, 'Неверно ввел команду! Потвори!', reply_markup=keyboard_2)
         bot.register_next_step_handler(message, get_static)
         return
-    data_processing(message, period_time, now_day, message.text)
-    bot.send_document(message.chat.id, open(f'{message.from_user.id}.xlsx', 'rb'),
-                      caption=f'Ваша статистика {message.text}!', reply_markup=keyboard)
+    filename = f'{message.from_user.id}.xlsx'
+    process_data(message.chat.id, filename, period_time, message.text)
+    if os.path.exists(filename):
+        bot.send_document(message.chat.id, open(filename, 'rb'),
+                          caption=f'Ваша статистика {message.text}!', reply_markup=keyboard)
+    else:
+        bot.send_message(message.chat.id, 'Недельной статистика нет!')
     bot.register_next_step_handler(message, select)
-    # TODO Присылать отчет каждую неделю!
     # TODO добавить xlxs  в отдельную папку или использовать временные файлы в  python!
+
+
+def send_static():
+    logging.info('Sending week statistics...')
+    start_day = datetime.now() - timedelta(days=7)
+    for chat_id in data_users.keys():
+        filename = f'week_report_{chat_id}.xlsx'
+        logging.info(f'Sending statistics to {chat_id}...')
+        if os.path.exists(filename):
+            os.remove(filename)
+        process_data(chat_id, filename, start_day, 'Отчет за неделю')
+        if os.path.exists(filename):
+            bot.send_document(chat_id, open(filename, 'rb'),
+                              caption=f'Ваша статистика за неделю')
+        else:
+            bot.send_message(chat_id, 'Нет недельного отчета')
+        # if not os.path.exists(filename):
+        #     continue
+        # bot.send_document(chat_id, open(filename, 'rb'),
+        #                   caption=f'Ваша статистика за неделю')
+
+
+def run_schedule():
+    while True:
+        schedule.run_pending()
+
+
+def get_db_users():
+    users_id = {}
+    for user in coll.distinct("user"):
+        users_id[user] = {}
+    return users_id
 
 
 if __name__ == '__main__':
@@ -198,10 +240,20 @@ if __name__ == '__main__':
     db = client.Data_Driver
     coll: Collection = db.Users
 
+    data_users = get_db_users()
+
     wb = Workbook()
     ws = wb.active
+    schedule.every().sunday.at('21:00').do(send_static)
+
+    #
+    send_static()
+
+    schedule_thread = Thread(target=run_schedule)
+    schedule_thread.start()
+
+    bot.infinity_polling()
 
     # ws.title = 'Primer'
     # wb.save('Test_1.xlsx')
     # wb.close()
-    bot.infinity_polling()

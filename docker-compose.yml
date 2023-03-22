@@ -1,14 +1,14 @@
 version: '3.1'
 
 services:
-  dimplom:
+  dip:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       MONGO_URL: "mongodb://root:example@mongo:27017/"
-    command: python3 /app/Diplom.py
+    command: python3 /app/Dip.py
 
   mongo:
     image: mongo
