@@ -2,17 +2,20 @@
 # Данная программа предназначена для сбора и введения отчетности водителям для грузовых машин!
 
 
-<img width="780" alt="Безымянный56" src="https://user-images.githubusercontent.com/78380371/222977691-18497a15-20be-4cf4-a111-851cc2e16456.png">
+<img width="780" alt="1" src="https://user-images.githubusercontent.com/78380371/226865669-b1bde79f-cbe7-454b-a562-85d44b49b08a.png">
 
 
 
-<img width="385" alt="Безымянный" src="https://user-images.githubusercontent.com/78380371/222977462-d73efabf-cb3e-4df3-8e94-098818c4fef5.png">
+<img width="385" alt="2" src="https://user-images.githubusercontent.com/78380371/226865710-467e1597-0300-4f13-841d-ec2d6e919f6b.png">
 
 
-<img width="385" alt="Безымянный1" src="https://user-images.githubusercontent.com/78380371/222977500-b6b6a9bf-c18f-482f-b1fa-a1945545eee9.png">
+
+<img width="379" alt="3" src="https://user-images.githubusercontent.com/78380371/226865747-c31f2d5a-8fde-46e4-a7f7-1b0be11ffb4a.png">
 
 
-<img width="379" alt="Безымянный3" src="https://user-images.githubusercontent.com/78380371/222977523-387a4f4c-6c37-44c3-842a-6763995bcc04.png">
 
 
-<img width="795" alt="Безымянный5" src="https://user-images.githubusercontent.com/78380371/222977543-ff41dd12-087c-4e16-bf57-a823ac88e24e.png">
+
+
+<img width="795" alt="4" src="https://user-images.githubusercontent.com/78380371/226865799-7d53e441-c266-4641-a040-0450c57f3322.png">
+
